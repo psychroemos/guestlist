@@ -398,39 +398,63 @@
         }
 
         .hold-progress {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #c4868e, #b5707a);
-            width: 0;
-            border-radius: 0 0 0 14px;
-            transition: none;
-            pointer-events: none;
-        }
-
-        .hold-progress.animating {
-            transition: width 5s linear;
-            width: 100%;
+            display: none;
         }
 
         .drag-mode-banner {
             display: none;
-            background: #c4868e;
+            background: #b5707a;
             color: #fff;
             text-align: center;
-            padding: 10px 16px;
+            padding: 12px 16px;
             font-size: 0.85rem;
             font-weight: 600;
             letter-spacing: 0.5px;
-            position: sticky;
-            top: 66px;
-            z-index: 95;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .drag-mode-banner.visible {
             display: block;
+        }
+
+        /* ── Move buttons (shown in drag mode) ── */
+        .move-btns {
+            display: none;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .guest-item.drag-ready .move-btns {
+            display: flex;
+        }
+
+        .guest-item.drag-ready .seated-btn {
+            display: none;
+        }
+
+        .move-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #c4868e;
+            border-radius: 8px;
+            background: #fff;
+            color: #c4868e;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .move-btn:active {
+            background: #c4868e;
+            color: #fff;
+            transform: scale(0.9);
         }
 
         /* ── Footer ── */
@@ -528,11 +552,10 @@
             <button class="clear-btn" id="clearBtn">&times;</button>
             <div class="search-results-dropdown" id="searchDropdown"></div>
         </div>
+        <!-- Drag Mode Banner (inside search section so it sticks below) -->
+        <div class="drag-mode-banner" id="dragBanner">Reorder mode active — use ▲▼ to move — <u>tap here to exit</u></div>
     </div>
     <div class="overlay" id="overlay"></div>
-
-    <!-- Drag Mode Banner -->
-    <div class="drag-mode-banner" id="dragBanner">Reorder mode active — drag guests to reorder — <u>tap here to exit</u></div>
 
     <!-- Guest Count -->
     <p class="guest-count" id="guestCount"></p>
@@ -1059,66 +1082,49 @@
 
         // ── Long-press Drag & Reorder ──
         const dragBanner = document.getElementById('dragBanner');
-        let holdTimer = null;
-        let holdTarget = null;
         let dragMode = false;
         let dragItem = null;
         let dragList = null;
 
-        // Add hold progress bar to each guest item
-        function addProgressBars() {
-            document.querySelectorAll('.guest-item').forEach(item => {
-                if (!item.querySelector('.hold-progress')) {
-                    const bar = document.createElement('div');
-                    bar.className = 'hold-progress';
-                    item.appendChild(bar);
-                }
-            });
-        }
-        addProgressBars();
+        // ── 4-tap activation ──
+        let tapCount = 0;
+        let tapTimer = null;
+        let tapTarget = null;
+        const TAPS_REQUIRED = 4;
+        const TAP_WINDOW = 2000;
 
-        // Observe for rebuilds
-        const tableObserver = new MutationObserver(() => { addProgressBars(); });
-        tableObserver.observe(tablesContainer, { childList: true, subtree: true });
-
-        // ── Press & hold (5s) to activate drag mode ──
-        function startHold(e) {
+        // ── Tap 4 times on a guest name to activate drag mode (secret) ──
+        tablesContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.seated-btn')) return;
+            if (e.target.closest('.move-btn')) return;
             if (dragMode) return;
+
             const item = e.target.closest('.guest-item');
-            if (!item || e.target.closest('.seated-btn')) return;
+            if (!item) return;
 
-            holdTarget = item;
-            const bar = item.querySelector('.hold-progress');
-            if (bar) {
-                bar.classList.remove('animating');
-                bar.style.width = '0';
-                // Force reflow
-                void bar.offsetWidth;
-                bar.classList.add('animating');
+            if (tapTarget !== item) {
+                tapCount = 0;
+                tapTarget = item;
             }
 
-            holdTimer = setTimeout(() => {
+            tapCount++;
+
+            if (tapTimer) clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+                tapTarget = null;
+                tapTimer = null;
+            }, TAP_WINDOW);
+
+            if (tapCount >= TAPS_REQUIRED) {
                 activateDragMode(item);
-            }, 5000);
-        }
-
-        function cancelHold() {
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
+                tapCount = 0;
+                tapTarget = null;
+                if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; }
             }
-            if (holdTarget) {
-                const bar = holdTarget.querySelector('.hold-progress');
-                if (bar) {
-                    bar.classList.remove('animating');
-                    bar.style.width = '0';
-                }
-                holdTarget = null;
-            }
-        }
+        });
 
         function activateDragMode(item) {
-            cancelHold();
             dragMode = true;
             dragBanner.classList.add('visible');
 
@@ -1126,13 +1132,19 @@
             if (!list) return;
             dragList = list;
 
-            // Mark all items in this list as drag-ready
+            // Add move buttons and mark items as drag-ready
             list.querySelectorAll('.guest-item').forEach(gi => {
                 gi.classList.add('drag-ready');
                 gi.setAttribute('draggable', 'true');
+                // Add move up/down buttons if not already there
+                if (!gi.querySelector('.move-btns')) {
+                    const btns = document.createElement('div');
+                    btns.className = 'move-btns';
+                    btns.innerHTML = '<button class="move-btn move-up" title="Move up">▲</button><button class="move-btn move-down" title="Move down">▼</button>';
+                    gi.appendChild(btns);
+                }
             });
 
-            // Vibrate if supported
             if (navigator.vibrate) navigator.vibrate(100);
         }
 
@@ -1145,20 +1157,40 @@
             document.querySelectorAll('.guest-item.drag-ready').forEach(gi => {
                 gi.classList.remove('drag-ready', 'dragging', 'drag-over');
                 gi.removeAttribute('draggable');
+                const btns = gi.querySelector('.move-btns');
+                if (btns) btns.remove();
             });
         }
 
         dragBanner.addEventListener('click', deactivateDragMode);
 
-        // ── Hold events on guest items ──
-        tablesContainer.addEventListener('mousedown', startHold);
-        tablesContainer.addEventListener('mouseup', cancelHold);
-        tablesContainer.addEventListener('mouseleave', cancelHold);
-        tablesContainer.addEventListener('touchstart', (e) => {
-            startHold(e);
-        }, { passive: true });
-        tablesContainer.addEventListener('touchend', cancelHold);
-        tablesContainer.addEventListener('touchcancel', cancelHold);
+        // ── Move up/down button clicks ──
+        tablesContainer.addEventListener('click', (e) => {
+            if (!dragMode || !dragList) return;
+            const moveBtn = e.target.closest('.move-btn');
+            if (!moveBtn) return;
+
+            const item = moveBtn.closest('.guest-item');
+            if (!item) return;
+
+            if (moveBtn.classList.contains('move-up')) {
+                const prev = item.previousElementSibling;
+                if (prev) {
+                    prev.before(item);
+                    renumberList(dragList);
+                    saveGuestOrder(dragList);
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            } else if (moveBtn.classList.contains('move-down')) {
+                const next = item.nextElementSibling;
+                if (next) {
+                    next.after(item);
+                    renumberList(dragList);
+                    saveGuestOrder(dragList);
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        });
 
         // ── Drag events ──
         tablesContainer.addEventListener('dragstart', (e) => {
