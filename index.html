@@ -374,6 +374,65 @@
             color: #fff;
         }
 
+        /* ── Drag & Reorder ── */
+        .guest-item {
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .guest-item.drag-ready {
+            background: #fef3f4;
+            box-shadow: 0 0 0 2px #c4868e inset;
+            cursor: grab;
+        }
+
+        .guest-item.dragging {
+            opacity: 0.5;
+            background: #fce8eb;
+        }
+
+        .guest-item.drag-over {
+            border-top: 3px solid #c4868e;
+        }
+
+        .hold-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #c4868e, #b5707a);
+            width: 0;
+            border-radius: 0 0 0 14px;
+            transition: none;
+            pointer-events: none;
+        }
+
+        .hold-progress.animating {
+            transition: width 5s linear;
+            width: 100%;
+        }
+
+        .drag-mode-banner {
+            display: none;
+            background: #c4868e;
+            color: #fff;
+            text-align: center;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 66px;
+            z-index: 95;
+            cursor: pointer;
+        }
+
+        .drag-mode-banner.visible {
+            display: block;
+        }
+
         /* ── Footer ── */
         .footer {
             text-align: center;
@@ -472,6 +531,9 @@
     </div>
     <div class="overlay" id="overlay"></div>
 
+    <!-- Drag Mode Banner -->
+    <div class="drag-mode-banner" id="dragBanner">Reorder mode active — drag guests to reorder — <u>tap here to exit</u></div>
+
     <!-- Guest Count -->
     <p class="guest-count" id="guestCount"></p>
 
@@ -518,7 +580,7 @@
             { name: "Jaquelyn De Vera", table: "Table 1" },
             { name: "Lexynne", table: "Table 1" },
             { name: "Mana Tinio", table: "Table 1" },
-            { name: "Sharon Rivas", table: "Table 1" },
+            { name: "Sharon Rivas", table: "Table 9" },
 
             // ── Table 2 ──
             { name: "Cecille Ardina", table: "Table 2" },
@@ -593,7 +655,7 @@
             { name: "Carmen Leal", table: "Table 9" },
             { name: "Kezia Sambo", table: "Table 9" },
             { name: "Lyn Sambo", table: "Table 9" },
-            { name: "Prima Rosales", table: "Table 9" },
+            { name: "Prima Rosales", table: "Table 8" },
             { name: "Shem Rosales", table: "Table 9" },
             { name: "Sherwin Sambo", table: "Table 9" },
 
@@ -994,6 +1056,300 @@
 
         // ── Initialize ──
         buildTables();
+
+        // ── Long-press Drag & Reorder ──
+        const dragBanner = document.getElementById('dragBanner');
+        let holdTimer = null;
+        let holdTarget = null;
+        let dragMode = false;
+        let dragItem = null;
+        let dragList = null;
+
+        // Add hold progress bar to each guest item
+        function addProgressBars() {
+            document.querySelectorAll('.guest-item').forEach(item => {
+                if (!item.querySelector('.hold-progress')) {
+                    const bar = document.createElement('div');
+                    bar.className = 'hold-progress';
+                    item.appendChild(bar);
+                }
+            });
+        }
+        addProgressBars();
+
+        // Observe for rebuilds
+        const tableObserver = new MutationObserver(() => { addProgressBars(); });
+        tableObserver.observe(tablesContainer, { childList: true, subtree: true });
+
+        // ── Press & hold (5s) to activate drag mode ──
+        function startHold(e) {
+            if (dragMode) return;
+            const item = e.target.closest('.guest-item');
+            if (!item || e.target.closest('.seated-btn')) return;
+
+            holdTarget = item;
+            const bar = item.querySelector('.hold-progress');
+            if (bar) {
+                bar.classList.remove('animating');
+                bar.style.width = '0';
+                // Force reflow
+                void bar.offsetWidth;
+                bar.classList.add('animating');
+            }
+
+            holdTimer = setTimeout(() => {
+                activateDragMode(item);
+            }, 5000);
+        }
+
+        function cancelHold() {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (holdTarget) {
+                const bar = holdTarget.querySelector('.hold-progress');
+                if (bar) {
+                    bar.classList.remove('animating');
+                    bar.style.width = '0';
+                }
+                holdTarget = null;
+            }
+        }
+
+        function activateDragMode(item) {
+            cancelHold();
+            dragMode = true;
+            dragBanner.classList.add('visible');
+
+            const list = item.closest('.guest-list');
+            if (!list) return;
+            dragList = list;
+
+            // Mark all items in this list as drag-ready
+            list.querySelectorAll('.guest-item').forEach(gi => {
+                gi.classList.add('drag-ready');
+                gi.setAttribute('draggable', 'true');
+            });
+
+            // Vibrate if supported
+            if (navigator.vibrate) navigator.vibrate(100);
+        }
+
+        function deactivateDragMode() {
+            dragMode = false;
+            dragItem = null;
+            dragList = null;
+            dragBanner.classList.remove('visible');
+
+            document.querySelectorAll('.guest-item.drag-ready').forEach(gi => {
+                gi.classList.remove('drag-ready', 'dragging', 'drag-over');
+                gi.removeAttribute('draggable');
+            });
+        }
+
+        dragBanner.addEventListener('click', deactivateDragMode);
+
+        // ── Hold events on guest items ──
+        tablesContainer.addEventListener('mousedown', startHold);
+        tablesContainer.addEventListener('mouseup', cancelHold);
+        tablesContainer.addEventListener('mouseleave', cancelHold);
+        tablesContainer.addEventListener('touchstart', (e) => {
+            startHold(e);
+        }, { passive: true });
+        tablesContainer.addEventListener('touchend', cancelHold);
+        tablesContainer.addEventListener('touchcancel', cancelHold);
+
+        // ── Drag events ──
+        tablesContainer.addEventListener('dragstart', (e) => {
+            if (!dragMode) { e.preventDefault(); return; }
+            const item = e.target.closest('.guest-item');
+            if (!item || !item.classList.contains('drag-ready')) { e.preventDefault(); return; }
+            dragItem = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+        });
+
+        tablesContainer.addEventListener('dragover', (e) => {
+            if (!dragMode || !dragItem) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const target = e.target.closest('.guest-item');
+            // Clear previous drag-over
+            if (dragList) {
+                dragList.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            }
+            if (target && target !== dragItem && target.classList.contains('drag-ready')) {
+                target.classList.add('drag-over');
+            }
+        });
+
+        tablesContainer.addEventListener('dragleave', (e) => {
+            const target = e.target.closest('.guest-item');
+            if (target) target.classList.remove('drag-over');
+        });
+
+        tablesContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!dragMode || !dragItem || !dragList) return;
+
+            const target = e.target.closest('.guest-item');
+            if (target && target !== dragItem && target.classList.contains('drag-ready')) {
+                // Determine position
+                const items = [...dragList.querySelectorAll('.guest-item')];
+                const dragIdx = items.indexOf(dragItem);
+                const dropIdx = items.indexOf(target);
+
+                if (dragIdx < dropIdx) {
+                    target.after(dragItem);
+                } else {
+                    target.before(dragItem);
+                }
+
+                // Renumber
+                renumberList(dragList);
+                // Save order to Firebase
+                saveGuestOrder(dragList);
+            }
+
+            dragItem.classList.remove('dragging');
+            if (dragList) dragList.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            dragItem = null;
+        });
+
+        tablesContainer.addEventListener('dragend', (e) => {
+            if (dragItem) dragItem.classList.remove('dragging');
+            if (dragList) dragList.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            dragItem = null;
+        });
+
+        // ── Touch-based drag for mobile ──
+        let touchDragItem = null;
+        let touchClone = null;
+        let touchStartY = 0;
+        let touchCurrentTarget = null;
+
+        tablesContainer.addEventListener('touchstart', (e) => {
+            if (!dragMode) return;
+            const item = e.target.closest('.guest-item');
+            if (!item || !item.classList.contains('drag-ready') || e.target.closest('.seated-btn')) return;
+
+            touchDragItem = item;
+            touchStartY = e.touches[0].clientY;
+            item.classList.add('dragging');
+        }, { passive: true });
+
+        tablesContainer.addEventListener('touchmove', (e) => {
+            if (!dragMode || !touchDragItem || !dragList) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetItem = target ? target.closest('.guest-item') : null;
+
+            dragList.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+            if (targetItem && targetItem !== touchDragItem && targetItem.classList.contains('drag-ready')) {
+                targetItem.classList.add('drag-over');
+                touchCurrentTarget = targetItem;
+            } else {
+                touchCurrentTarget = null;
+            }
+        }, { passive: false });
+
+        tablesContainer.addEventListener('touchend', (e) => {
+            if (!dragMode || !touchDragItem || !dragList) return;
+
+            if (touchCurrentTarget && touchCurrentTarget !== touchDragItem) {
+                const items = [...dragList.querySelectorAll('.guest-item')];
+                const dragIdx = items.indexOf(touchDragItem);
+                const dropIdx = items.indexOf(touchCurrentTarget);
+
+                if (dragIdx < dropIdx) {
+                    touchCurrentTarget.after(touchDragItem);
+                } else {
+                    touchCurrentTarget.before(touchDragItem);
+                }
+
+                renumberList(dragList);
+                saveGuestOrder(dragList);
+            }
+
+            touchDragItem.classList.remove('dragging');
+            dragList.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            touchDragItem = null;
+            touchCurrentTarget = null;
+        });
+
+        function renumberList(list) {
+            list.querySelectorAll('.guest-item').forEach((item, i) => {
+                const num = item.querySelector('.guest-number');
+                if (num) num.textContent = i + 1;
+            });
+        }
+
+        function saveGuestOrder(list) {
+            const tableGroup = list.closest('.table-group');
+            if (!tableGroup) return;
+            const tableId = tableGroup.id.replace('table-', '');
+            const order = [...list.querySelectorAll('.guest-item')].map(item => item.getAttribute('data-guest'));
+
+            // Save to localStorage
+            const orderData = JSON.parse(localStorage.getItem('wedding_guest_order') || '{}');
+            orderData[tableId] = order;
+            localStorage.setItem('wedding_guest_order', JSON.stringify(orderData));
+
+            // Save to Firebase
+            if (firebaseReady && db) {
+                db.ref('guestOrder/' + tableId).set(order);
+            }
+        }
+
+        // ── Apply saved order on load ──
+        function applySavedOrder() {
+            const orderData = JSON.parse(localStorage.getItem('wedding_guest_order') || '{}');
+            Object.keys(orderData).forEach(tableId => {
+                const tableGroup = document.getElementById('table-' + tableId);
+                if (!tableGroup) return;
+                const list = tableGroup.querySelector('.guest-list');
+                if (!list) return;
+                const order = orderData[tableId];
+                const items = [...list.querySelectorAll('.guest-item')];
+                const itemMap = {};
+                items.forEach(item => { itemMap[item.getAttribute('data-guest')] = item; });
+
+                order.forEach(guestKey => {
+                    if (itemMap[guestKey]) list.appendChild(itemMap[guestKey]);
+                });
+                renumberList(list);
+            });
+        }
+        applySavedOrder();
+
+        // ── Listen for order changes from Firebase ──
+        if (firebaseReady && db) {
+            db.ref('guestOrder').on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                localStorage.setItem('wedding_guest_order', JSON.stringify(data));
+                Object.keys(data).forEach(tableId => {
+                    const tableGroup = document.getElementById('table-' + tableId);
+                    if (!tableGroup) return;
+                    const list = tableGroup.querySelector('.guest-list');
+                    if (!list) return;
+                    const order = data[tableId];
+                    const items = [...list.querySelectorAll('.guest-item')];
+                    const itemMap = {};
+                    items.forEach(item => { itemMap[item.getAttribute('data-guest')] = item; });
+
+                    order.forEach(guestKey => {
+                        if (itemMap[guestKey]) list.appendChild(itemMap[guestKey]);
+                    });
+                    renumberList(list);
+                });
+            });
+        }
     </script>
 </body>
 </html>
