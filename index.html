@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Jayvee & Samantha - Wedding Guest Seating</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, #fdf2f4 0%, #f5e0e4 50%, #fdf2f4 100%);
+            min-height: 100vh;
+            color: #3a2e2e;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #b5707a 0%, #c4868e 50%, #d4a0a7 100%);
+            padding: 30px 20px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .couple-names {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .couple-names .amp {
+            font-style: italic;
+            font-weight: 400;
+            color: #f0d4d8;
+            margin: 0 6px;
+        }
+
+        .wedding-subtitle {
+            font-family: 'Lato', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #f0d4d8;
+            margin-top: 8px;
+            font-weight: 300;
+        }
+
+        /* ── Search Section ── */
+        .search-section {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #fff;
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .search-wrapper {
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #c4868e;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            border: 2px solid #e8d4d8;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-family: 'Lato', sans-serif;
+            color: #3a2e2e;
+            background: #fdf6f7;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #c4868e;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(196,134,142,0.15);
+        }
+
+        .search-input::placeholder {
+            color: #c9a8ad;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: #c4868e;
+            cursor: pointer;
+            display: none;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+
+        .clear-btn.visible {
+            display: block;
+        }
+
+        .search-results-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 200;
+        }
+
+        .search-results-dropdown.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0e0e2;
+            transition: background 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover,
+        .search-result-item:active {
+            background: #fdf2f4;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .search-result-name mark {
+            background: #f5c4ca;
+            color: inherit;
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+
+        .search-result-table {
+            font-size: 0.8rem;
+            color: #fff;
+            background: #c4868e;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .no-results {
+            padding: 20px;
+            text-align: center;
+            color: #c9a8ad;
+            font-style: italic;
+        }
+
+        /* ── Guest Count ── */
+        .guest-count {
+            text-align: center;
+            padding: 16px 20px 4px;
+            font-size: 0.85rem;
+            color: #c4868e;
+            letter-spacing: 1px;
+        }
+
+        /* ── Table Sections ── */
+        .tables-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px 16px 40px;
+        }
+
+        .table-group {
+            margin-bottom: 20px;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #b5707a, #c4868e);
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 14px 14px 0 0;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 0.5px;
+        }
+
+        .table-header .seat-count {
+            font-family: 'Lato', sans-serif;
+            font-size: 0.75rem;
+            background: rgba(255,255,255,0.2);
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .guest-list {
+            background: #fff;
+            border-radius: 0 0 14px 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .guest-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f5e6e8;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .guest-item:last-child {
+            border-bottom: none;
+        }
+
+        .guest-number {
+            width: 28px;
+            height: 28px;
+            background: #f0dce0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #b5707a;
+            flex-shrink: 0;
+        }
+
+        .guest-name {
+            font-size: 0.95rem;
+            font-weight: 400;
+            flex: 1;
+        }
+
+        /* ── Seated Button ── */
+        .seated-btn {
+            padding: 6px 14px;
+            border: 2px solid #c4868e;
+            border-radius: 20px;
+            background: transparent;
+            color: #c4868e;
+            font-family: 'Lato', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .seated-btn:hover {
+            background: #fce8eb;
+        }
+
+        .seated-btn:active {
+            transform: scale(0.95);
+        }
+
+        .guest-item.seated .seated-btn {
+            background: #5a9a6e;
+            border-color: #5a9a6e;
+            color: #fff;
+        }
+
+        .guest-item.seated .guest-name {
+            color: #5a9a6e;
+            font-weight: 600;
+        }
+
+        .guest-item.seated .guest-number {
+            background: #d4edda;
+            color: #5a9a6e;
+        }
+
+        /* ── Seated counter in header ── */
+        .seated-counter {
+            font-family: 'Lato', sans-serif;
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.25);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 400;
+            margin-left: 8px;
+        }
+
+        .seated-counter.all-seated {
+            background: #5a9a6e;
+        }
+
+        .table-header-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .guest-item.highlight {
+            background: #fce8eb;
+            animation: pulseHighlight 2s ease-out;
+        }
+
+        @keyframes pulseHighlight {
+            0% { background: #f5c4ca; }
+            100% { background: #fce8eb; }
+        }
+
+        .guest-item.highlight .guest-name {
+            font-weight: 700;
+            color: #8b4a55;
+        }
+
+        .guest-item.highlight .guest-number {
+            background: #c4868e;
+            color: #fff;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #c9a8ad;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .footer .heart {
+            color: #d4a0a7;
+            font-size: 1rem;
+        }
+
+        /* ── Scroll-to-top ── */
+        .scroll-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: #c4868e;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 50;
+        }
+
+        .scroll-top.visible {
+            display: flex;
+        }
+
+        .scroll-top:hover {
+            background: #a8707a;
+            transform: scale(1.05);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 400px) {
+            .couple-names { font-size: 1.8rem; }
+            .header { padding: 24px 16px 16px; }
+            .search-input { font-size: 0.95rem; padding: 12px 14px 12px 42px; }
+        }
+
+        @media (min-width: 768px) {
+            .couple-names { font-size: 2.8rem; }
+            .header { padding: 40px 20px 30px; }
+        }
+
+        /* ── Smooth scrolling ── */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ── Overlay to close dropdown ── */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="couple-names">Jayvee <span class="amp">&</span> Samantha</h1>
+            <p class="wedding-subtitle">Wedding Reception &bull; Guest Seating Guide</p>
+        </div>
+    </header>
+
+    <!-- Sticky Search -->
+    <div class="search-section">
+        <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search guest name..." autocomplete="off">
+            <button class="clear-btn" id="clearBtn">&times;</button>
+            <div class="search-results-dropdown" id="searchDropdown"></div>
+        </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Guest Count -->
+    <p class="guest-count" id="guestCount"></p>
+
+    <!-- Tables Container -->
+    <div class="tables-container" id="tablesContainer"></div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <span class="heart">&#9829;</span> Jayvee & Samantha 2026 <span class="heart">&#9829;</span>
+    </div>
+
+    <!-- Scroll to top -->
+    <button class="scroll-top" id="scrollTopBtn" title="Back to top">&#8679;</button>
+
+    <script>
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  GUEST LIST DATA — Edit this section to update guests      ║
+        // ║  Format: { name: "Guest Name", table: tableNumber }        ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        const guests = [
+            // ── Presidential A ──
+            { name: "Amanda Ardina", table: "Presidential A" },
+            { name: "Dan Sarita", table: "Presidential A" },
+            { name: "David Namoca", table: "Presidential A" },
+            { name: "Glenn Ardina", table: "Presidential A" },
+            { name: "Jethro Bumatay", table: "Presidential A" },
+            { name: "Norma Sarita", table: "Presidential A" },
+            { name: "Sarah Bumatay", table: "Presidential A" },
+
+            // ── Presidential B ──
+            { name: "Abegail Sambo", table: "Presidential B" },
+            { name: "Aldren Concepcion", table: "Presidential B" },
+            { name: "Ed Samuel Concepcion", table: "Presidential B" },
+            { name: "Florentino Ardina", table: "Presidential B" },
+            { name: "Grace De Vera", table: "Presidential B" },
+            { name: "Jielrey Rosales", table: "Presidential B" },
+            { name: "Lolita Ardina", table: "Presidential B" },
+            { name: "Michelle Rosales", table: "Presidential B" },
+
+            // ── Table 1 ──
+            { name: "Aurora Tino", table: "Table 1" },
+            { name: "Benjamine Balayan", table: "Table 1" },
+            { name: "Erine Espineli", table: "Table 1" },
+            { name: "Jaquelyn De Vera", table: "Table 1" },
+            { name: "Lexynne", table: "Table 1" },
+            { name: "Mana Tinio", table: "Table 1" },
+            { name: "Sharon Rivas", table: "Table 1" },
+
+            // ── Table 2 ──
+            { name: "Cecille Ardina", table: "Table 2" },
+            { name: "Ceres Ardina", table: "Table 2" },
+            { name: "Chesna Amolo", table: "Table 2" },
+            { name: "Esther Ardina", table: "Table 2" },
+            { name: "Gilbert Enarsao", table: "Table 2" },
+            { name: "Joyjoy Ardina", table: "Table 2" },
+            { name: "Jr Ardina", table: "Table 2" },
+            { name: "Virgelio Ardina", table: "Table 2" },
+
+            // ── Table 3 ──
+            { name: "Alyssa Concepcion", table: "Table 3" },
+            { name: "Carol Salazar", table: "Table 3" },
+            { name: "Chelsey Faye Salazar", table: "Table 3" },
+            { name: "Felix Salazar", table: "Table 3" },
+            { name: "Glenda Quimson", table: "Table 3" },
+            { name: "Kiefer Quimson", table: "Table 3" },
+            { name: "Kyrie Quimson", table: "Table 3" },
+            { name: "Regie Concepcion", table: "Table 3" },
+
+            // ── Table 4 ──
+            { name: "Evangeline Mejia", table: "Table 4" },
+            { name: "Kimberly Bercasio", table: "Table 4" },
+            { name: "Lanie Concepcion", table: "Table 4" },
+            { name: "Malou Concepcion", table: "Table 4" },
+            { name: "Noel Mejia", table: "Table 4" },
+            { name: "Nong Concepcion", table: "Table 4" },
+            { name: "Novalene Mejia", table: "Table 4" },
+
+            // ── Table 5 ──
+            { name: "Jackie Lou De Vera", table: "Table 5" },
+            { name: "Joy De Vera", table: "Table 5" },
+            { name: "Kimberly De Vera", table: "Table 5" },
+            { name: "Michael De Vera", table: "Table 5" },
+            { name: "Olga Mabborang", table: "Table 5" },
+            { name: "Philip De Vera", table: "Table 5" },
+            { name: "Virgilio Mabborang", table: "Table 5" },
+
+            // ── Table 6 ──
+            { name: "Ernesto De Vera", table: "Table 6" },
+            { name: "Evangeline Javar", table: "Table 6" },
+            { name: "Jerry Javar", table: "Table 6" },
+            { name: "Joan Garrido", table: "Table 6" },
+            { name: "Kiarra Garrido", table: "Table 6" },
+            { name: "Mary Ann De Vera", table: "Table 6" },
+            { name: "Shane Javar", table: "Table 6" },
+            { name: "Shannon Javar", table: "Table 6" },
+
+            // ── Table 7 ──
+            { name: "Anzel Gonzalez", table: "Table 7" },
+            { name: "Hai Gonzalez", table: "Table 7" },
+            { name: "Jabes Rosales", table: "Table 7" },
+            { name: "Kenneth Makinano", table: "Table 7" },
+            { name: "Kevin Makinano", table: "Table 7" },
+            { name: "Peter Sumalinog", table: "Table 7" },
+            { name: "Tessy Makinano", table: "Table 7" },
+            { name: "Virginita Sumalinog", table: "Table 7" },
+
+            // ── Table 8 ──
+            { name: "Ante Maritess Sumalinog", table: "Table 8" },
+            { name: "Cindy Rosales", table: "Table 8" },
+            { name: "Isay Sumalinog", table: "Table 8" },
+            { name: "Osias Rosales", table: "Table 8" },
+            { name: "Rr Sumalinog", table: "Table 8" },
+            { name: "Tata Sumalinog", table: "Table 8" },
+            { name: "Uncle Dodong Sumalinog", table: "Table 8" },
+
+            // ── Table 9 ──
+            { name: "Analisa Delfin", table: "Table 9" },
+            { name: "Analyn Rosales", table: "Table 9" },
+            { name: "Carmen Leal", table: "Table 9" },
+            { name: "Kezia Sambo", table: "Table 9" },
+            { name: "Lyn Sambo", table: "Table 9" },
+            { name: "Prima Rosales", table: "Table 9" },
+            { name: "Shem Rosales", table: "Table 9" },
+            { name: "Sherwin Sambo", table: "Table 9" },
+
+            // ── Table 10 ──
+            { name: "Dan Mabazza", table: "Table 10" },
+            { name: "Jenny Pidelo", table: "Table 10" },
+            { name: "Julie Jazul", table: "Table 10" },
+            { name: "Micha Bais", table: "Table 10" },
+            { name: "Pau Jazul", table: "Table 10" },
+            { name: "Raffy Peralta", table: "Table 10" },
+            { name: "Rovy Roy Bais", table: "Table 10" },
+            { name: "Ver Pidelo", table: "Table 10" },
+
+            // ── Table 11 ──
+            { name: "Anna Mendoza", table: "Table 11" },
+            { name: "Arleine Paconla", table: "Table 11" },
+            { name: "Diane Bagorio", table: "Table 11" },
+            { name: "Julius Judan", table: "Table 11" },
+            { name: "Katrina Judan", table: "Table 11" },
+            { name: "Manny Castillo", table: "Table 11" },
+            { name: "Michael Paconla", table: "Table 11" },
+            { name: "Rorie Castillo", table: "Table 11" },
+
+            // ── Table 12 ──
+            { name: "Jezryl Collado", table: "Table 12" },
+            { name: "Lily Gavino", table: "Table 12" },
+            { name: "Liza Urrea", table: "Table 12" },
+            { name: "Lourdes Parpan", table: "Table 12" },
+            { name: "Mary Ann Abundo", table: "Table 12" },
+            { name: "Ramil Collado", table: "Table 12" },
+            { name: "Rebecca Arupo", table: "Table 12" },
+            { name: "Rosita Salamat", table: "Table 12" },
+
+            // ── Table 13 ──
+            { name: "Aldrain Macabangun", table: "Table 13" },
+            { name: "Cath Hernandez", table: "Table 13" },
+            { name: "Charles Hernandez", table: "Table 13" },
+            { name: "Ephraim De Leon", table: "Table 13" },
+            { name: "Eunice Disciplulo", table: "Table 13" },
+            { name: "Kim De Leon", table: "Table 13" },
+            { name: "Rafael Dizon", table: "Table 13" },
+            { name: "Reynaldo Discipulo", table: "Table 13" },
+
+            // ── Table 14 ──
+            { name: "Cherry Diaz", table: "Table 14" },
+            { name: "Gayle Posion", table: "Table 14" },
+            { name: "Jared Posion", table: "Table 14" },
+            { name: "Joey Razon", table: "Table 14" },
+            { name: "Jonathan Barbadillo", table: "Table 14" },
+            { name: "Kelly Barbadillo", table: "Table 14" },
+            { name: "Randy Ballad", table: "Table 14" },
+            { name: "Zen Ballad", table: "Table 14" },
+
+            // ── Table 15 ──
+            { name: "Del Garo", table: "Table 15" },
+            { name: "Geli Realon", table: "Table 15" },
+            { name: "Jimmy Carlos", table: "Table 15" },
+            { name: "Lester Bais", table: "Table 15" },
+            { name: "Micaiah Bais", table: "Table 15" },
+            { name: "Rio Realon", table: "Table 15" },
+            { name: "Virgie Ampeloquio", table: "Table 15" },
+            { name: "Viring Sualog", table: "Table 15" },
+
+            // ── Table 16 ──
+            { name: "Gellie Fernandez", table: "Table 16" },
+            { name: "Hana Dey Salazar", table: "Table 16" },
+            { name: "Hyrenz Alvez", table: "Table 16" },
+            { name: "Jimrey Del Rosario", table: "Table 16" },
+            { name: "Kziah Navarro", table: "Table 16" },
+            { name: "Pia Penano", table: "Table 16" },
+            { name: "Piolo Pe\u00f1ano", table: "Table 16" },
+            { name: "Rica Realon", table: "Table 16" },
+
+            // ── Table 17 ──
+            { name: "Photographer 1", table: "Table 17" },
+            { name: "Photographer 2", table: "Table 17" },
+            { name: "Photographer 3", table: "Table 17" },
+            { name: "Photographer 4", table: "Table 17" },
+            { name: "Videographer 1", table: "Table 17" },
+            { name: "Videographer 2", table: "Table 17" },
+            { name: "Videographer 3", table: "Table 17" },
+            { name: "Videographer 4", table: "Table 17" },
+
+            // ── Table 18 ──
+            { name: "Aijhalon Auxtero", table: "Table 18" },
+            { name: "Janna De Castro", table: "Table 18" },
+            { name: "Jazmine Vergara", table: "Table 18" },
+            { name: "Jc Vasquez", table: "Table 18" },
+            { name: "Joshua Ampeloquio", table: "Table 18" },
+            { name: "Kyla Barbadillo", table: "Table 18" },
+            { name: "Pauline Agtarap", table: "Table 18" },
+
+            // ── Table 19 ──
+            { name: "Allan Salas", table: "Table 19" },
+            { name: "Dean Jethro Agaza", table: "Table 19" },
+            { name: "Ella Sumalinog", table: "Table 19" },
+            { name: "Eunice Sambo", table: "Table 19" },
+            { name: "JP Castillo", table: "Table 19" },
+            { name: "Kiana Auxtero", table: "Table 19" },
+            { name: "Mark Delfin", table: "Table 19" },
+            { name: "Precious Jacob", table: "Table 19" },
+        ];
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  END OF GUEST LIST — No need to edit below this line       ║
+        // ╚══════════════════════════════════════════════════════════════╝
+
+        // ── Seated state (persists in localStorage) ──
+        const STORAGE_KEY = 'wedding_seated_guests';
+        let seatedGuests = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+        function saveSeatedState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(seatedGuests));
+        }
+
+        // ── DOM Elements ──
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const searchDropdown = document.getElementById('searchDropdown');
+        const tablesContainer = document.getElementById('tablesContainer');
+        const guestCountEl = document.getElementById('guestCount');
+        const overlay = document.getElementById('overlay');
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+        // ── Build table groups ──
+        function buildTables() {
+            const tables = {};
+            guests.forEach(g => {
+                if (!tables[g.table]) tables[g.table] = [];
+                tables[g.table].push(g.name);
+            });
+
+            // Custom sort: Presidential A, Presidential B, then Table 1-19
+            const tableOrder = (name) => {
+                if (name === 'Presidential A') return -2;
+                if (name === 'Presidential B') return -1;
+                const match = name.match(/\d+/);
+                return match ? parseInt(match[0]) : 0;
+            };
+            const sortedTableNames = Object.keys(tables).sort((a, b) => tableOrder(a) - tableOrder(b));
+            let html = '';
+
+            sortedTableNames.forEach(tableName => {
+                const tableGuests = tables[tableName];
+                const tableId = tableName.toLowerCase().replace(/\s+/g, '-');
+                const seatedCount = tableGuests.filter(n => seatedGuests[n.toLowerCase()]).length;
+                const allSeated = seatedCount === tableGuests.length;
+                html += `
+                    <div class="table-group" id="table-${tableId}">
+                        <div class="table-header">
+                            <span>${tableName}</span>
+                            <div class="table-header-info">
+                                <span class="seat-count">${tableGuests.length} guest${tableGuests.length > 1 ? 's' : ''}</span>
+                                <span class="seated-counter${allSeated ? ' all-seated' : ''}" data-table-counter="${tableId}">${seatedCount}/${tableGuests.length} seated</span>
+                            </div>
+                        </div>
+                        <div class="guest-list">
+                            ${tableGuests.map((name, i) => {
+                                const isSeated = seatedGuests[name.toLowerCase()] || false;
+                                return `
+                                <div class="guest-item${isSeated ? ' seated' : ''}" data-guest="${name.toLowerCase()}">
+                                    <span class="guest-number">${i + 1}</span>
+                                    <span class="guest-name">${name}</span>
+                                    <button class="seated-btn" data-guest-key="${name.toLowerCase()}">${isSeated ? '✓ Seated' : 'Seated'}</button>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            tablesContainer.innerHTML = html;
+            const totalSeated = Object.values(seatedGuests).filter(Boolean).length;
+            guestCountEl.textContent = `${guests.length} Guests · ${sortedTableNames.length} Tables · ${totalSeated} Arrived`;
+        }
+
+        // ── Search functionality ──
+        function handleSearch() {
+            const query = searchInput.value.trim().toLowerCase();
+            clearBtn.classList.toggle('visible', query.length > 0);
+
+            if (query.length === 0) {
+                closeDropdown();
+                return;
+            }
+
+            const matches = guests.filter(g => g.name.toLowerCase().includes(query));
+
+            if (matches.length === 0) {
+                searchDropdown.innerHTML = '<div class="no-results">No guests found</div>';
+            } else {
+                searchDropdown.innerHTML = matches.map(g => {
+                    const highlightedName = highlightMatch(g.name, query);
+                    return `
+                        <div class="search-result-item" data-guest="${g.name.toLowerCase()}" data-table="${g.table}">
+                            <span class="search-result-name">${highlightedName}</span>
+                            <span class="search-result-table">${g.table}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            searchDropdown.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        function highlightMatch(name, query) {
+            const idx = name.toLowerCase().indexOf(query);
+            if (idx === -1) return name;
+            return name.slice(0, idx) + '<mark>' + name.slice(idx, idx + query.length) + '</mark>' + name.slice(idx + query.length);
+        }
+
+        function closeDropdown() {
+            searchDropdown.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        function scrollToGuest(guestName, tableNum) {
+            closeDropdown();
+            searchInput.value = '';
+            clearBtn.classList.remove('visible');
+
+            // Remove previous highlights
+            document.querySelectorAll('.guest-item.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            // Find and highlight the guest
+            const guestEl = document.querySelector(`.guest-item[data-guest="${guestName}"]`);
+            if (guestEl) {
+                // Scroll to the table group first
+                const tableId = tableNum.toLowerCase().replace(/\s+/g, '-');
+                const tableGroup = document.getElementById(`table-${tableId}`);
+                if (tableGroup) {
+                    const yOffset = -140; // account for sticky search bar
+                    const y = tableGroup.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+
+                // Highlight after scroll
+                setTimeout(() => {
+                    guestEl.classList.add('highlight');
+                    // Ensure the specific guest is visible
+                    guestEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 400);
+
+                // Remove highlight after a while
+                setTimeout(() => {
+                    guestEl.classList.remove('highlight');
+                }, 5000);
+            }
+        }
+
+        // ── Seated toggle ──
+        tablesContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.seated-btn');
+            if (!btn) return;
+
+            const guestKey = btn.getAttribute('data-guest-key');
+            const guestItem = btn.closest('.guest-item');
+
+            if (seatedGuests[guestKey]) {
+                delete seatedGuests[guestKey];
+                guestItem.classList.remove('seated');
+                btn.textContent = 'Seated';
+            } else {
+                seatedGuests[guestKey] = true;
+                guestItem.classList.add('seated');
+                btn.textContent = '✓ Seated';
+            }
+
+            saveSeatedState();
+            updateSeatedCounters();
+        });
+
+        function updateSeatedCounters() {
+            // Update table-level counters
+            document.querySelectorAll('.table-group').forEach(group => {
+                const items = group.querySelectorAll('.guest-item');
+                const seated = group.querySelectorAll('.guest-item.seated');
+                const tableId = group.id.replace('table-', '');
+                const counter = group.querySelector('.seated-counter');
+                if (counter) {
+                    counter.textContent = `${seated.length}/${items.length} seated`;
+                    counter.classList.toggle('all-seated', seated.length === items.length);
+                }
+            });
+
+            // Update global count
+            const totalSeated = Object.values(seatedGuests).filter(Boolean).length;
+            const tableCount = document.querySelectorAll('.table-group').length;
+            guestCountEl.textContent = `${guests.length} Guests · ${tableCount} Tables · ${totalSeated} Arrived`;
+        }
+
+        // ── Event Listeners ──
+        searchInput.addEventListener('input', handleSearch);
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.classList.remove('visible');
+            closeDropdown();
+            searchInput.focus();
+        });
+
+        searchDropdown.addEventListener('click', (e) => {
+            const item = e.target.closest('.search-result-item');
+            if (item) {
+                const guestName = item.getAttribute('data-guest');
+                const tableNum = item.getAttribute('data-table');
+                scrollToGuest(guestName, tableNum);
+            }
+        });
+
+        overlay.addEventListener('click', () => {
+            closeDropdown();
+        });
+
+        // Close dropdown on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeDropdown();
+                searchInput.blur();
+            }
+        });
+
+        // Scroll-to-top button
+        window.addEventListener('scroll', () => {
+            scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+        });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ── Initialize ──
+        buildTables();
+    </script>
+</body>
+</html>
