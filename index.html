@@ -7,6 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -697,12 +700,77 @@
         // ║  END OF GUEST LIST — No need to edit below this line       ║
         // ╚══════════════════════════════════════════════════════════════╝
 
-        // ── Seated state (persists in localStorage) ──
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  FIREBASE CONFIG — Replace with your own Firebase config    ║
+        // ║  Go to https://console.firebase.google.com                  ║
+        // ║  1. Create a new project (free)                             ║
+        // ║  2. Go to Build > Realtime Database > Create Database       ║
+        // ║  3. Choose "Start in test mode"                             ║
+        // ║  4. Go to Project Settings > General > Your Apps > Web (</>)║
+        // ║  5. Register app, copy the config below                     ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJUKnbLkQA4AzCFZJ_YzvVJ6hqC_NxAT0",
+            authDomain: "guest-34fe1.firebaseapp.com",
+            databaseURL: "https://guest-34fe1-default-rtdb.firebaseio.com",
+            projectId: "guest-34fe1",
+            storageBucket: "guest-34fe1.firebasestorage.app",
+            messagingSenderId: "389344862953",
+            appId: "1:389344862953:web:03df6e2ddb93f0af3a0678",
+            measurementId: "G-SQQWEQQFBP"
+        };
+
+        // ── Firebase initialization ──
+        let db = null;
+        let seatedRef = null;
+        let firebaseReady = false;
+
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                seatedRef = db.ref('seatedGuests');
+                firebaseReady = true;
+            }
+        } catch (e) {
+            console.warn('Firebase not configured. Using local storage only.', e);
+        }
+
+        // ── Seated state (persists in localStorage + syncs via Firebase) ──
         const STORAGE_KEY = 'wedding_seated_guests';
         let seatedGuests = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
         function saveSeatedState() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(seatedGuests));
+            if (firebaseReady && seatedRef) {
+                seatedRef.set(seatedGuests);
+            }
+        }
+
+        // ── Listen for real-time changes from Firebase ──
+        if (firebaseReady && seatedRef) {
+            seatedRef.on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                seatedGuests = data;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(seatedGuests));
+                refreshSeatedUI();
+            });
+        }
+
+        function refreshSeatedUI() {
+            // Update each guest item in the DOM without full rebuild
+            document.querySelectorAll('.guest-item').forEach(item => {
+                const guestKey = item.getAttribute('data-guest');
+                const btn = item.querySelector('.seated-btn');
+                if (seatedGuests[guestKey]) {
+                    item.classList.add('seated');
+                    if (btn) btn.textContent = '\u2713 Seated';
+                } else {
+                    item.classList.remove('seated');
+                    if (btn) btn.textContent = 'Seated';
+                }
+            });
+            updateSeatedCounters();
         }
 
         // ── DOM Elements ──
